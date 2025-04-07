@@ -47,9 +47,9 @@ git clone https://github.com/nathanmfrench/voxium-client
 
 2.  **Install Dependencies:** Install the required Python libraries using pip (or your package manager of choice):
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+```bash
+pip install -r requirements.txt
+```
 
 ## Configuration
 
