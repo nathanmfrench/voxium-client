@@ -60,10 +60,10 @@ Configuration is primarily done within your Python script (like `example_usage.p
 * **`VOXIUM_LANGUAGE`**: The language code for transcription (e.g., `"en"`, `"es"`, `"fr"`). Defaults to `"en"`.
 * **Other Parameters:** You can customize other parameters when initializing `LiveTranscriber` or `VoxiumClient`:
     * `vad_threshold` (float): Voice Activity Detection threshold (client-side hint for server).
-    * `silence_threshold` (float): Server-side silence duration parameter.
+    * `silence_threshold` (float): Server-side silence duration parameter, controls length of silence before sending an audio chunk.
     * `sample_rate` (int): Audio sample rate (hardcoded to 16000 Hz in `live_transcribe.py`).
     * `input_format` (str): Expected audio format on the server *after* base64 decoding (hardcoded to `"base64"` in `live_transcribe.py` as the client sends base64).
-    * `beam_size`, `batch_size` (int): Hints for the server's transcription process.
+    * `beam_size`, `batch_size` (int) Beam size controls number of search candidates at each step (set to 1 for greedy decoding). Batch size is the number of parallel audio inputs allowed for the asr model.
 
 ## Usage
 
