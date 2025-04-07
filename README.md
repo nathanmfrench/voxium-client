@@ -45,20 +45,8 @@ This project provides a Python client library for interacting with the Voxium re
 git clone https://github.com/nathanmfrench/voxium-client
 ```
 
-2.  **Install Dependencies:** Install the required Python libraries using pip:
+2.  **Install Dependencies:** Install the required Python libraries using pip (or your package manager of choice):
 
-    ```bash
-    pip install websockets numpy sounddevice
-    ```
-    You can also create a `requirements.txt` file:
-
-    ```text
-    # requirements.txt
-    websockets>=10.0  # Specify versions as needed
-    numpy>=1.18
-    sounddevice>=0.4
-    ```
-    And install using:
     ```bash
     pip install -r requirements.txt
     ```
