@@ -144,3 +144,106 @@ if __name__ == "__main__":
          logger.critical(f"Failed to run transcription: {e}", exc_info=True)
 
     logger.info("Transcription process finished.")
+```
+Run script from your terminal with
+
+```
+python3 example_usage.py
+```
+
+## Core Components
+
+### VoxiumClient (`client.py`)
+
+* Manages the low-level WebSocket connection lifecycle (`connect`, `close`).
+* Handles URL construction with query parameters (including the API key).
+* Formats outgoing audio messages (encodes audio bytes to Base64 JSON).
+* Runs a persistent `_receiver` task to listen for incoming messages (transcriptions, status, errors) from the server.
+* Parses incoming JSON messages and routes them to the appropriate asynchronous callbacks.
+* Provides setter methods (`set_transcription_callback`, `set_error_callback`, etc.) for registering custom handlers.
+* Implements `async` context manager protocols (`__aenter__`, `__aexit__`) for automatic connection setup and teardown.
+* Handles WebSocket connection errors and state changes.
+
+### LiveTranscriber (`live_transcribe.py`)
+
+* Acts as the primary interface for users.
+* Initializes and manages the `VoxiumClient`.
+* Uses `sounddevice.InputStream` to capture audio from the default microphone in a separate thread.
+* The `_audio_callback` function (running in the `sounddevice` thread) converts audio chunks (`numpy.ndarray`) to bytes.
+* Uses `loop.call_soon_threadsafe` to safely put the audio bytes onto an `asyncio.Queue` from the `sounddevice` thread.
+* An `_audio_loop` `async` task runs in the main event loop, consuming audio bytes from the queue.
+* Sends audio chunks to the server via the `VoxiumClient.send_audio_chunk` method.
+* Manages the starting (`start`) and stopping (`stop`, `cleanup_audio`) of the audio stream and processing loop.
+* Provides the simplified, blocking `start_transcription` method which:
+    * Sets up default callbacks if user doesn't provide them.
+    * Assigns user-provided callbacks to the underlying `VoxiumClient`.
+    * Checks basic `sounddevice` settings before starting.
+    * Uses `asyncio.run()` to manage the event loop and run the main `start` coroutine.
+    * Handles `KeyboardInterrupt` for graceful shutdown.
+
+## Callbacks
+
+The `LiveTranscriber.start_transcription` method accepts several optional `async` callback functions:
+
+* **`on_transcription(result: dict)`**: *(Required)* Called whenever a transcription message (partial or final) is received from the server. The `result` dictionary typically contains keys like `"transcription"` (the text) and `"is_final"` (boolean).
+* **`on_error(error: Union[Exception, str])`**: Called when the server sends an error status message or when certain client-side processing errors occur (like in the audio loop or message handling).
+* **`on_open(info: dict)`**: Called once after the WebSocket connection is successfully established and the initial server handshake is complete. The `info` dictionary contains details sent by the server (e.g., model info).
+* **`on_close(code: int, reason: str)`**: Called when the WebSocket connection is closed, either cleanly or due to an error detected by the underlying `websockets` library *within the receiver task*. Provides the close code and reason.
+
+If you don't provide `on_error`, `on_open`, or `on_close`, default handlers that log the event will be used.
+
+*Note:* The underlying `VoxiumClient` also has a `connection_error_callback` specifically for errors during the connection phase or WebSocket-level close errors not caught by the receiver loop's `ConnectionClosed...` exceptions. This isn't directly exposed via `start_transcription` but is used internally and logs errors.
+
+## Logging
+
+The code uses Python's standard `logging` module.
+
+* `example_usage.py` sets up a basic configuration that logs `INFO` level messages and above to the console.
+* `client.py` and `live_transcribe.py` obtain their own loggers (`logging.getLogger(__name__)`).
+* You can customize the logging level and format in `example_usage.py` (e.g., set `level=logging.DEBUG` for verbose output, or add file handlers).
+
+## How it Works
+
+1.  `LiveTranscriber.start_transcription` is called.
+2.  It configures callbacks on the `VoxiumClient` instance.
+3.  It runs `asyncio.run(_run_internal)`, which calls `LiveTranscriber.start`.
+4.  `LiveTranscriber.start` gets the current event loop.
+5.  It enters the `VoxiumClient` async context (`__aenter__`), which calls `client.connect`.
+6.  `client.connect` establishes the WebSocket connection, handles authentication, receives initial info, and starts the `client._receiver` task in the background.
+7.  `LiveTranscriber.start` calls `setup_audio`, which creates and starts `sounddevice.InputStream`. The `_audio_callback` begins running in a separate thread.
+8.  `_audio_callback` captures audio chunks, converts them to bytes, and uses `loop.call_soon_threadsafe` to put them on the `audio_queue`.
+9.  `LiveTranscriber.start` starts the `_audio_loop` task.
+10. `_audio_loop` waits for audio bytes from the `audio_queue`.
+11. When audio arrives, `_audio_loop` calls `client.send_audio_chunk`.
+12. `client.send_audio_chunk` base64 encodes the audio and sends it as a JSON message over the WebSocket.
+13. Concurrently, `client._receiver` listens for messages from the server.
+14. When a transcription message arrives, `_receiver` parses it and calls the registered `on_transcription` callback (your `handle_transcription` function).
+15. This continues until `start_transcription` is interrupted (`Ctrl+C`) or a fatal error occurs.
+16. On exit (interrupt or completion/error of `start`), `asyncio.run` handles task cancellation. The `finally` blocks in `start` and the client's `__aexit__` method (`close`) ensure the audio stream and WebSocket connection are cleaned up.
+
+## Dependencies
+
+* **`websockets`**: For WebSocket client implementation.
+* **`numpy`**: For handling audio data arrays from `sounddevice`.
+* **`sounddevice`**: For accessing the microphone and capturing audio streams.
+* **`typing`**: For type checking
+## Troubleshooting
+
+* **`PortAudioError` / No Sound / "Invalid input device":**
+    * Ensure a microphone is plugged in and enabled in your system settings.
+    * Verify PortAudio is installed correctly (`brew install portaudio`, `apt-get install ...`).
+    * Check if another application is exclusively using the microphone.
+    * Try specifying a device ID in `sd.InputStream(device=...)` if the default is wrong. Use `python -m sounddevice` to list devices.
+    * Ensure the microphone supports the required settings (16000 Hz, Mono, 16-bit Integer - `RATE`, `CHANNELS`, `SD_DTYPE`).
+* **Connection Refused / Invalid Status Code / Timeout:**
+    * Double-check the `VOXIUM_SERVER_URL`.
+    * Verify your `VOXIUM_API_KEY` is correct and valid.
+    * Check your internet connection and any firewall/proxy settings that might block WebSocket connections (port 443 for `wss://`).
+* **Authentication Errors:**
+    * Ensure the `apiKey` query parameter is being sent correctly (check logs if `DEBUG` level enabled) and matches what Voxium expects.
+* **No Transcriptions Received:**
+    * Check if the microphone is picking up sound (enable `DEBUG` logging to see audio chunk scheduling/sending).
+    * Verify the correct `VOXIUM_LANGUAGE` is set.
+    * Look for error messages in the logs from the client or server.
+* **Import Errors:**
+    * Ensure the Python files (`client.py`, `live_transcribe.py`) are located where Python can find them (e.g., same directory as your main script, or installed as part of a package). Adjust import statements (`from .client ...` vs `from voxium_client ...`) as needed based on your project structure.
