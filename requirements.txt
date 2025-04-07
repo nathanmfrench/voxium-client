@@ -1,4 +1,4 @@
 websockets
 numpy
 typing
-soundfile
+sounddevice

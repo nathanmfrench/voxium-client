@@ -35,11 +35,16 @@ This project provides a Python client library for interacting with the Voxium re
     * **macOS:** `brew install portaudio`
     * **Debian/Ubuntu:** `sudo apt-get install libportaudio2 libportaudiocpp0 portaudio19-dev`
     * **Windows:** Often included with Python distributions or audio drivers. Check the [sounddevice documentation](https://python-sounddevice.readthedocs.io/en/latest/installation.html) for details.
-* **Voxium API Key:** You will need an API key from Voxium to authenticate with the service.
+* **Voxium API Key:** You need an API key from Voxium to authenticate with the service.
 
 ## Installation
 
-1.  **Clone Repo** Obtain the source files (`client.py`, `live_transcribe.py`, `example_usage.py`). Place them in your project directory, maintaining the relative import structure (e.g., keep `client.py` and `live_transcribe.py` together if `live_transcribe.py` uses `from .client import VoxiumClient`).
+1.  **Clone Repo** 
+
+```
+git clone https://github.com/nathanmfrench/voxium-client
+```
+
 2.  **Install Dependencies:** Install the required Python libraries using pip:
 
     ```bash
