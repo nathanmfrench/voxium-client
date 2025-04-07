@@ -28,8 +28,5 @@ setup(
     install_requires=[
         "websockets>=10.0",
         "numpy>=1.19.0",
-    ],
-    extras_require={
-        "live": ["pyaudio>=0.2.11"],
-    },
+    ]
 ) 
