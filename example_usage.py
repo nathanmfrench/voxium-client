@@ -1,9 +1,7 @@
-# example_usage.py
-
 import logging
 from voxium_client import LiveTranscriber 
 
-# --- 1. Configure Logging (Simplified) ---
+# --- 1. Configure Logging  ---
 # This basic setup logs WARNING level messages and above to the console.
 # It's sufficient for most examples (you can implement more complex logging if needed).
 # Set level=logging.DEBUG for debugging logs, and level=logging.INFO for normal logs.
@@ -13,7 +11,6 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-# You can get a specific logger for your example if you like
 logger = logging.getLogger("MyVoiceAgentExample")
 
 
@@ -73,7 +70,6 @@ if __name__ == "__main__":
             # on_close=my_async_close_handler
         )
     except Exception as e:
-         # Catch potential errors during startup if not handled within start_transcription
          logger.critical(f"Failed to run transcription: {e}", exc_info=True)
 
     logger.info("Transcription process finished.")

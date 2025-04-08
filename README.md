@@ -39,17 +39,22 @@ This project provides a Python client library for interacting with the Voxium re
 
 ## Installation
 
-1.  **Clone Repo** 
+1.  **From Source** 
 
-```
+```bash
 git clone https://github.com/nathanmfrench/voxium-client
 ```
-
-2.  **Install Dependencies:** Install the required Python libraries using pip (or your package manager of choice):
 
 ```bash
 pip install -r requirements.txt
 ```
+2.  **From Package Manager:**
+
+```bash
+pip install voxium
+```
+(or you can use your package manager of choice)
+
 
 ## Configuration
 
@@ -63,7 +68,7 @@ Configuration is primarily done within your Python script (like `example_usage.p
     * `silence_threshold` (float): Server-side silence duration parameter, controls length of silence before sending an audio chunk.
     * `sample_rate` (int): Audio sample rate (hardcoded to 16000 Hz in `live_transcribe.py`).
     * `input_format` (str): Expected audio format on the server *after* base64 decoding (hardcoded to `"base64"` in `live_transcribe.py` as the client sends base64).
-    * `beam_size`, `batch_size` (int) Beam size controls number of search candidates at each step (set to 1 for greedy decoding). Batch size is the number of parallel audio inputs allowed for the asr model.
+    * `beam_size` (int) Beam size controls number of search candidates at each step (set to 1 for greedy decoding).
 
 ## Usage
 
@@ -77,56 +82,76 @@ The `example_usage.py` script demonstrates how to use the `LiveTranscriber`.
 6.  **Start Transcription:** Call the `start_transcription` method, providing your handler function. This method is **blocking** and will run until interrupted (e.g., Ctrl+C) or a critical error occurs.
 
 ```python
-# example_usage.py (Simplified)
 import logging
-import asyncio
-# Assuming live_transcribe.py is in a package named 'voxium_client'
-from voxium_client import LiveTranscriber # Adjust import based on your structure
+from voxium_client import LiveTranscriber 
 
-# --- 1. Configure Logging ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
-logger = logging.getLogger("MyExample")
+# --- 1. Configure Logging  ---
+# This basic setup logs WARNING level messages and above to the console.
+# It's sufficient for most examples (you can implement more complex logging if needed).
+# Set level=logging.DEBUG for debugging logs, and level=logging.INFO for normal logs.
 
-# --- 2. Define Your Transcription Handler ---
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("MyVoiceAgentExample")
+
+
+# --- 2. Define Your Transcription Handler (Required) ---
+# This asynchronous function will receive transcription results.
 async def handle_transcription(result: dict):
-    """Processes transcription results."""
+    """
+    Callback function to process transcription results from Voxium.
+    'result' is a dictionary.
+    """
     try:
         text = result.get('transcription', '')
-        is_final = result.get('is_final', False) # Check if result is final
-        if text:
-            print(f"Transcription ({'Final' if is_final else 'Partial'}): {text}")
-        # Add your application logic here
+        print("Transcription: ", text)
+
+        # Now, you can ntegrate the transcription text into your voice agent's pipeline. For example:
+            # await send_to_my_agent_logic(text)
+
     except Exception as e:
-        logger.error(f"Error in handle_transcription: {e}", exc_info=True)
+        logger.error(f"Error within handle_transcription callback: {e}", exc_info=True)
+
 
 # --- 3. Main Execution ---
 if __name__ == "__main__":
-    logger.info("Starting Voxium LiveTranscriber Example...")
+    logger.info("Starting Voxium LiveTranscriber Integration Example...")
 
-    # --- Configuration ---
-    VOXIUM_API_KEY = "YOUR_API_KEY_HERE" # <<< REPLACE THIS!
+    # --- Configuration Parameters ---
+    VOXIUM_API_KEY = "YOUR_API_KEY_HERE"
+
+    if VOXIUM_API_KEY == "YOUR_API_KEY_HERE":
+        logger.warning("Using placeholder API Key. Please set the VOXIUM_API_KEY environment variable or replace the placeholder.")
+
     VOXIUM_SERVER_URL = "wss://voxium.tech/asr/ws"
     VOXIUM_LANGUAGE = "en"
 
-    if VOXIUM_API_KEY == "YOUR_API_KEY_HERE":
-        logger.warning("Using placeholder API Key. Please set correctly.")
-        # Consider exiting if the key is required:
-        # import sys
-        # sys.exit("API Key not configured.")
-
-    # --- Initialize ---
+    # --- Initialize the Transcriber ---
+    logger.info(f"Initializing LiveTranscriber for {VOXIUM_LANGUAGE}...")
     transcriber = LiveTranscriber(
         server_url=VOXIUM_SERVER_URL,
         language=VOXIUM_LANGUAGE,
         api_key=VOXIUM_API_KEY
+        # Add/override other parameters if needed:
+        # vad_threshold=0.5,
+        # silence_threshold=0.5,
     )
 
-    # --- Start (Blocking Call) ---
+    # --- Start the Transcription Process ---
+    # This is a blocking call that runs the transcriber until stopped (Ctrl+C or error).
+    # It requires your 'on_transcription' callback function.
     logger.info("Starting transcription. Press Ctrl+C to stop.")
     try:
         transcriber.start_transcription(
             on_transcription=handle_transcription
-            # Optional: Add other callbacks like on_error, on_open, on_close
+            # --- Optional Callbacks ---
+            # You can provide your own async functions for other events:
+            # on_error=my_async_error_handler,
+            # on_open=my_async_open_handler,
+            # on_close=my_async_close_handler
         )
     except Exception as e:
          logger.critical(f"Failed to run transcription: {e}", exc_info=True)
