@@ -1,5 +1,3 @@
-# client.py
-
 import asyncio
 import json
 import websockets
@@ -110,7 +108,6 @@ class VoxiumClient:
                 except Exception as e: # Catch errors during message processing/callback execution
                     logger.error(f"Error processing received message or in callback: {e}", exc_info=True)
                     if self.error_callback:
-                         # Notify about processing errors too
                          await self.error_callback(RuntimeError(f"Callback/Processing Error: {e}"))
 
             # handling for connection closed events
@@ -124,7 +121,7 @@ class VoxiumClient:
                 if self.connection_error_callback:
                      await self.connection_error_callback(e)
                 break
-            except Exception as e: # Catch other errors during recv (e.g., network issues)
+            except Exception as e: 
                 logger.error(f"Error during WebSocket receive: {e}", exc_info=True)
                 if self.connection_error_callback:
                      await self.connection_error_callback(e)
