@@ -24,6 +24,7 @@ async def handle_transcription(result: dict):
     try:
         text = result.get('transcription', '')
         print("Transcription: ", text)
+        print("Language: ", result.get('language', ''), "with probability: ", result.get('language_probability', ''))
 
         # Now, you can ntegrate the transcription text into your voice agent's pipeline. For example:
             # await send_to_my_agent_logic(text)
@@ -43,13 +44,13 @@ if __name__ == "__main__":
         logger.warning("Using placeholder API Key. Please set the VOXIUM_API_KEY environment variable or replace the placeholder.")
 
     VOXIUM_SERVER_URL = "wss://voxium.tech/asr/ws"
-    VOXIUM_LANGUAGE = "en"
+    LANGUAGE = None
 
     # --- Initialize the Transcriber ---
-    logger.info(f"Initializing LiveTranscriber for {VOXIUM_LANGUAGE}...")
+    logger.info(f"Initializing LiveTranscriber for {LANGUAGE}...")
     transcriber = LiveTranscriber(
         server_url=VOXIUM_SERVER_URL,
-        language=VOXIUM_LANGUAGE,
+        language=LANGUAGE,
         api_key=VOXIUM_API_KEY
         # Add/override other parameters if needed:
         # vad_threshold=0.5,

@@ -68,7 +68,10 @@ Configuration is primarily done within your Python script (like `example_usage.p
     * `silence_threshold` (float): Server-side silence duration parameter, controls length of silence before sending an audio chunk.
     * `sample_rate` (int): Audio sample rate (hardcoded to 16000 Hz in `live_transcribe.py`).
     * `input_format` (str): Expected audio format on the server *after* base64 decoding (hardcoded to `"base64"` in `live_transcribe.py` as the client sends base64).
-    * `beam_size` (int) Beam size controls number of search candidates at each step (set to 1 for greedy decoding).
+    * `beam_size` (int): Beam size controls number of search candidates at each step (set to 1 for greedy decoding).
+    * `language` (str): 2 digit ISO-code for the desired language. 'None' to auto-detect (language and probability passed to client as language, language_probability respectively)
+    
+Supported languages: Afrikaans (af), Arabic (ar), Armenian (hy), Azerbaijani (az), Belarusian (be), Bosnian (bs), Bulgarian (bg), Catalan (ca), Chinese (zh), Croatian (hr), Czech (cs), Danish (da), Dutch (nl), English (en), Estonian (et), Finnish (fi), French (fr), Galician (gl), German (de), Greek (el), Hebrew (he), Hindi (hi), Hungarian (hu), Icelandic (is), Indonesian (id), Italian (it), Japanese (ja), Kannada (kn), Kazakh (kk), Korean (ko), Latvian (lv), Lithuanian (lt), Macedonian (mk), Malay (ms), Marathi (mr), Maori (mi), Nepali (ne), Norwegian (no), Persian (fa), Polish (pl), Portuguese (pt), Romanian (ro), Russian (ru), Serbian (sr), Slovak (sk), Slovenian (sl), Spanish (es), Swahili (sw), Swedish (sv), Tagalog (tl), Tamil (ta), Thai (th), Turkish (tr), Ukrainian (uk), Urdu (ur), Vietnamese (vi), Welsh (cy)
 
 ## Usage
 

@@ -19,7 +19,7 @@ class VoxiumClient:
         server_url: str = "wss://voxium.tech/asr/ws",
         vad_threshold: float = 0.5,
         silence_threshold: float = 0.5,
-        language: str = "en",
+        language: Optional[str] = None,
         batch_size: int = 4,
         beam_size: int = 2,
         input_format: str = "base64",
@@ -129,7 +129,7 @@ class VoxiumClient:
 
         logger.info("Receiver task finished.")
         # Attempt to clean up connection if task exits unexpectedly
-        if self.websocket and not self.websocket.closed:
+        if self.websocket and self.websocket.state == State.OPEN:
              logger.warning("Receiver task exited unexpectedly, attempting to close connection.")
              # Use create_task as we are likely already in the event loop here, but await might not work
              asyncio.create_task(self.close())
@@ -182,12 +182,12 @@ class VoxiumClient:
                 except asyncio.TimeoutError:
                     logger.error("Timeout waiting for initial server info after connection.")
                     # Attempt to close cleanly if possible
-                    if self.websocket and not self.websocket.closed: await self.websocket.close(code=1008, reason="Timeout waiting initial info")
+                    if self.websocket and self.websocket.state == State.OPEN: await self.websocket.close(code=1008, reason="Timeout waiting initial info")
                     self.websocket = None
                     raise ConnectionError("Did not receive initial server info in time.")
                 except (json.JSONDecodeError, TypeError) as e:
                     logger.error(f"Failed to parse initial server info as JSON: {e}")
-                    if self.websocket and not self.websocket.closed: await self.websocket.close(code=1007, reason="Invalid JSON received")
+                    if self.websocket and self.websocket.state == State.OPEN: await self.websocket.close(code=1007, reason="Invalid JSON received")
                     self.websocket = None
                     raise ConnectionError(f"Failed to parse initial server info: {e}")
                 except websockets.exceptions.ConnectionClosed as e:
@@ -281,7 +281,7 @@ class VoxiumClient:
                 self._receive_task = None
 
             # Close WebSocket connection if open
-            if self.websocket and self.websocket.state != State.CLOSED:
+            if self.websocket and self.websocket.state == State.OPEN:
                 logger.info("Closing WebSocket connection...")
                 try:
                     await self.websocket.close(code=1000, reason="Client closing normally")

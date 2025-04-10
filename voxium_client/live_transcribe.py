@@ -30,7 +30,7 @@ class LiveTranscriber:
         api_key: Optional[str] = None,
         vad_threshold: float = 0.5,
         silence_threshold: float = 0.5,
-        language: str = "en",
+        language: Optional[str] = None,
         **client_kwargs
     ):
         """
