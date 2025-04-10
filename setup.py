@@ -21,7 +21,7 @@ install_requires = [
 
 setuptools.setup(
     name="voxium",
-    version="0.1.0",
+    version="0.2.0",
     author="Nathan French",
     author_email="nathanmfrench17@gmail.com",
     description="A client library for the Voxium real-time transcription service",

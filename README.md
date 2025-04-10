@@ -243,6 +243,7 @@ The code uses Python's standard `logging` module.
 * **`numpy`**: For handling audio data arrays from `sounddevice`.
 * **`sounddevice`**: For accessing the microphone and capturing audio streams.
 * **`typing`**: For type checking
+
 ## Troubleshooting
 
 * **`PortAudioError` / No Sound / "Invalid input device":**
